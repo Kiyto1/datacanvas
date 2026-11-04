@@ -31,7 +31,7 @@ test('loads in Arabic RTL with no CSP violations or external requests', async ({
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
-  await expect(page.getByRole('status')).toContainText('لا يتم رفع الملف');
+  await expect(page.getByTestId('privacy-badge')).toContainText('لا يتم رفع الملف');
 
   const pageViolations = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
   expect([...violations, ...pageViolations]).toEqual([]);

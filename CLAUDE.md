@@ -25,6 +25,10 @@ E2E runs against `vite preview` on port 4173, which serves the headers parsed fr
 
 Styling: Tailwind v4 utilities backed by CSS-variable tokens in `src/index.css`; plain CSS only for ECharts containers, print layouts and special animations. Build reusable components instead of long class lists in page-level JSX. Hosting is Cloudflare Pages; CSP lives in `public/_headers` (note `style-src 'self'` forbids inline style attributes in markup, so verify ECharts against the production build).
 
+## Git
+
+Remote: `https://github.com/Kiyto1/datacanvas.git`, branch `main`. Do not add `Co-Authored-By: Claude` or "Generated with Claude Code" lines to commits or PRs (the user does not want Claude listed as a contributor; `.claude/settings.json` blanks the attribution). Commit and push only when asked. `.claude/settings.local.json` and `*.tsbuildinfo` are gitignored.
+
 ## Product
 
 **DataCanvas**: an Arabic-first, local-first web app that turns CSV/Excel files into interactive dashboards, with downloadable Power BI and Metabase packages. Stack: React + Vite + TypeScript (strict), ECharts, i18next (`ar` default), TanStack Table, Zustand, Zod, SheetJS (official distribution, pinned version; do not blindly `npm i xlsx`).
@@ -46,6 +50,7 @@ React UI → dashboard/filter state → versioned analysis request
 
 - Full datasets live in the worker (columnar typed arrays where possible), never in Zustand or React state. Zustand holds only lightweight UI state.
 - Stale worker responses are ignored/cancelled; aggregation cache keyed by (dataset version, filters, spec).
+- Implemented so far: `src/parse/` (byte decoding with UTF-8/UTF-16 BOM and Windows-1256 fallback, CSV/XLSX via SheetJS, limits in `src/core/types.ts`), `src/core/headers.ts` (empty → `column_N`, duplicates → `_2`), `src/worker/` (`protocol.ts` message types, `dataWorker.ts` holds the rows, `client.ts` ignores stale responses), `src/store/dataset.ts` (summary only). The parser keeps every CSV value as original text (no number/date guessing); typing happens later in profiling.
 - Recommendation engine is deterministic and ranked (rules over column type/role/cardinality plus an Arabic/English business-term dictionary). No AI in V1.
 - Dashboard configuration is saved as downloadable `.datacanvas.json` (no data). Saving actual data to IndexedDB is explicit opt-in only.
 
@@ -63,4 +68,4 @@ Stated as rows × columns: 10k×10, 50k×20, 100k×20, plus a wide 20k×100 case
 
 ## Tooling
 
-Security Guidance and VibeSec skills are enabled; run the security review and claude-security scan before launch.
+Security Guidance (plugin) and the VibeSec skill (`.claude/skills/VibeSec-Skill`, tracked in this repo) are enabled. Before launch, run `/security-review` and consider the claude-security and OWASP Security Audit plugins. Arabic data rules have no off-the-shelf skill; once the normalization and date code exist, capture them as a project skill.
