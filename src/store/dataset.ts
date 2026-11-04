@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { DatasetSummary } from '../core/types';
 import type { ChangeLogEntry, NormalizationDecision } from '../normalize/types';
 import { normalizeInWorker, parseInWorker, WorkerError } from '../worker/client';
+import { useDashboard } from './dashboard';
 
 // Only the lightweight summary lives here; the rows stay in the worker.
 interface DatasetState {
@@ -28,6 +29,7 @@ export const useDataset = create<DatasetState>((set) => ({
     set({ status: 'loading', errorCode: null });
     try {
       const summary = await parseInWorker(file);
+      useDashboard.getState().reset(); // filters, date choices and results belong to the previous file
       set({ status: 'ready', summary, preview: summary.preview, applied: [], changes: [] });
     } catch (error) {
       if (error instanceof WorkerError && error.superseded) return;

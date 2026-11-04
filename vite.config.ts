@@ -18,7 +18,8 @@ function headersFromFile(): Record<string, string> {
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   worker: { format: 'es' },
-  build: { target: 'es2022', sourcemap: false },
+  // assetsInlineLimit 0: never inline assets as data: URIs, so font-src/img-src can stay 'self'.
+  build: { target: 'es2022', sourcemap: false, assetsInlineLimit: 0 },
   preview: { port: 4173, strictPort: true, headers: headersFromFile() },
   test: {
     environment: 'jsdom',

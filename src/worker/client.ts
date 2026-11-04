@@ -1,5 +1,7 @@
 import type { DatasetSummary, RawCell } from '../core/types';
+import type { ChartResult, ChartSpec, Filter } from '../dashboard/types';
 import type { ChangeLogEntry, NormalizationDecision } from '../normalize/types';
+import type { DateCandidate } from '../profile/dates';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 type ErrorCode = Extract<WorkerResponse, { type: 'error' }>['code'];
@@ -24,7 +26,7 @@ interface Pending {
 
 let worker: Worker | null = null;
 let nextRequestId = 0;
-const latest: Record<Kind, number> = { parse: 0, normalize: 0 };
+const latest: Record<Kind, number> = { parse: 0, normalize: 0, aggregate: 0, setDateChoice: 0 };
 const pending = new Map<number, Pending>();
 
 function getWorker(): Worker {
@@ -65,6 +67,17 @@ export async function parseInWorker(file: File): Promise<DatasetSummary> {
   const res = await send('parse', (requestId) => ({ type: 'parse', requestId, fileName: file.name, buffer }), [buffer]);
   if (res.type !== 'parsed') throw new WorkerError('unknown', 'Unexpected response.');
   return res.summary;
+}
+
+export async function aggregateInWorker(specs: ChartSpec[], filters: Filter[]): Promise<ChartResult[]> {
+  const res = await send('aggregate', (requestId) => ({ type: 'aggregate', requestId, specs, filters }));
+  if (res.type !== 'aggregated') throw new WorkerError('unknown', 'Unexpected response.');
+  return res.results;
+}
+
+export async function setDateChoiceInWorker(columnId: string, candidate: DateCandidate): Promise<void> {
+  const res = await send('setDateChoice', (requestId) => ({ type: 'setDateChoice', requestId, columnId, candidate }));
+  if (res.type !== 'dateChoiceSet') throw new WorkerError('unknown', 'Unexpected response.');
 }
 
 export async function normalizeInWorker(

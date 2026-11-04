@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { dateParts, formatDateParts } from '../core/dateParts';
 import type { DatasetSummary, RawCell } from '../core/types';
 
 function formatCell(cell: RawCell): string {
   if (cell === null) return '';
-  if (cell instanceof Date) return cell.toISOString().slice(0, 10);
+  if (cell instanceof Date) return formatDateParts(dateParts(cell));
   return String(cell);
 }
 
@@ -23,11 +24,6 @@ export function DatasetPreview({ summary, rows }: Props) {
       <p className="mt-1 text-sm text-muted" data-testid="dataset-counts">
         {t('preview.counts', { rows: summary.rowCount, columns: summary.columnCount })}
       </p>
-      {summary.columns.some((c) => c.dateInference && c.dateInference.status !== 'confirmed') && (
-        <p role="note" className="mt-2 text-sm text-danger" data-testid="date-warning">
-          {t('profile.dateNeedsConfirmation')}
-        </p>
-      )}
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-start text-sm">
           <thead>

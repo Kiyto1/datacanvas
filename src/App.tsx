@@ -1,7 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { Dashboard } from './components/Dashboard';
+import { DateConfirmation } from './components/DateConfirmation';
 import { DatasetPreview } from './components/DatasetPreview';
 import { NormalizationReview } from './components/NormalizationReview';
 import { UploadDropzone } from './components/UploadDropzone';
+import { useDashboard } from './store/dashboard';
 import { useDataset } from './store/dataset';
 import { useUi } from './store/ui';
 
@@ -10,11 +13,13 @@ export default function App() {
   const lang = useUi((s) => s.lang);
   const setLang = useUi((s) => s.setLang);
   const { status, summary, preview, applied, changes, errorCode, load, applyNormalization } = useDataset();
+  const dateChoices = useDashboard((s) => s.dateChoices);
+  const chooseDate = useDashboard((s) => s.chooseDate);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-10">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('app.name')}</h1>
+        <h1 className="text-2xl font-semibold">{t('app.name')}</h1>
         <button
           type="button"
           className="rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-surface"
@@ -23,7 +28,7 @@ export default function App() {
           {t('lang.switch')}
         </button>
       </header>
-      <p className="text-lg text-muted">{t('app.tagline')}</p>
+      <p className="max-w-prose text-lg text-muted">{t('app.tagline')}</p>
       <UploadDropzone onFile={(f) => void load(f)} disabled={status === 'loading'} />
       {status === 'loading' && <p role="status">{t('upload.loading')}</p>}
       {status === 'error' && (
@@ -41,6 +46,13 @@ export default function App() {
             changes={changes}
             onApply={(d) => void applyNormalization(d)}
           />
+          <DateConfirmation
+            columns={summary.columns}
+            previewRows={summary.preview}
+            dateChoices={dateChoices}
+            onChoose={(id, cand) => void chooseDate(id, cand)}
+          />
+          <Dashboard key={summary.id} columns={summary.columns} dataVersion={applied} />
           <DatasetPreview summary={summary} rows={preview} />
         </>
       )}
