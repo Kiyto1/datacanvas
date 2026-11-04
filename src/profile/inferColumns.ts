@@ -16,7 +16,19 @@ interface TypeResult {
   dateInference?: DateInference;
 }
 
-function inferType(cells: Exclude<RawCell, null>[]): TypeResult {
+/** Type detection only needs a representative slice; counting/distinct use every row. */
+const SAMPLE_SIZE = 5000;
+
+type Cells = Exclude<RawCell, null>[];
+
+function evenSample(cells: Cells): Cells {
+  if (cells.length <= SAMPLE_SIZE) return cells;
+  const step = cells.length / SAMPLE_SIZE;
+  return Array.from({ length: SAMPLE_SIZE }, (_, i) => cells[Math.floor(i * step)]!);
+}
+
+/** `cells` is the sample used for the share tests; `all` is every non-null value (for date evidence). */
+function inferType(cells: Cells, all: Cells): TypeResult {
   const n = cells.length;
   if (n === 0) return { type: 'string' };
   const need = Math.ceil(n * SHARE);
@@ -31,7 +43,11 @@ function inferType(cells: Exclude<RawCell, null>[]): TypeResult {
   }
   const strings = cells.filter((c): c is string => typeof c === 'string');
   if (strings.length >= need) {
-    const dateInference = inferDateColumn(strings);
+    let dateInference = inferDateColumn(strings);
+    // It looks like dates on the sample: decide the day/month order from EVERY value, not just the sample.
+    if (dateInference && all.length > cells.length) {
+      dateInference = inferDateColumn(all.filter((c): c is string => typeof c === 'string'));
+    }
     if (dateInference) return { type: 'date', dateInference };
   }
 
@@ -57,12 +73,12 @@ interface RoleResult {
 function inferRole(
   type: ColumnType,
   hint: TermHint | null,
-  cells: Exclude<RawCell, null>[],
+  n: number,
+  sampleCells: Cells,
   distinct: number,
 ): RoleResult {
   const header = (role: ColumnRole, unitPrice = false): RoleResult => ({ role, source: 'header', unitPrice });
   const data = (role: ColumnRole): RoleResult => ({ role, source: 'data', unitPrice: false });
-  const n = cells.length;
 
   if (hint === 'identifier') return header('identifier');
   if (type === 'date' || type === 'boolean') return data('dimension');
@@ -71,7 +87,7 @@ function inferRole(
     if (hint === 'unit-price') return header('measure', true);
     if (hint === 'measure') return header('measure');
     if (hint === 'date' || hint === 'dimension' || hint === 'status') return header('dimension');
-    if (n >= 10 && distinct / n >= SHARE && allIntegers(cells)) return data('identifier');
+    if (n >= 10 && distinct / n >= SHARE && allIntegers(sampleCells)) return data('identifier');
     return data('measure');
   }
 
@@ -104,9 +120,10 @@ export function inferColumns(headers: string[], originalHeaders: string[], rows:
       seen.add(cellKey(cell));
     }
 
-    const { type, dateInference } = inferType(cells);
+    const sample = evenSample(cells);
+    const { type, dateInference } = inferType(sample, cells);
     const hint = hintForHeader(header);
-    const { role, source, unitPrice } = inferRole(type, hint, cells, seen.size);
+    const { role, source, unitPrice } = inferRole(type, hint, cells.length, sample, seen.size);
     const { allowed, fallback } = aggregationsFor(role, unitPrice);
 
     return {

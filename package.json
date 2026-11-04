@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench": "vitest run --config vitest.bench.config.ts",
+    "bench:browser": "playwright test --config playwright.perf.config.ts",
     "e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev"
   },

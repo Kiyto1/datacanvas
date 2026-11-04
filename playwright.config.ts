@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 // with the same headers (including CSP) as public/_headers.
 export default defineConfig({
   testDir: 'e2e',
+  testIgnore: /perf\.spec\.ts/, // slow benchmarks run via `npm run bench:browser`
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

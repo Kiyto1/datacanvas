@@ -66,6 +66,11 @@ export function ExportPanel({ datasetName, columns }: Props) {
       <p className="mt-1 max-w-prose text-sm text-muted">{t('export.biIntro')}</p>
       <div className="mt-3 flex flex-wrap gap-3">{PACKAGES.map(button)}</div>
       <div className="mt-3">{button('spec')}</div>
+      {busy && (
+        <p role="status" className="mt-3 text-sm text-muted" data-testid="export-working">
+          {t('export.working')}
+        </p>
+      )}
       {done && (
         <p role="status" className="mt-3 text-sm text-accent" data-testid="export-done">
           {t('export.done', { file: done })}

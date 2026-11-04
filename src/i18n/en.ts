@@ -22,6 +22,7 @@ export const en = {
     intro: 'Files are created on your device and never uploaded anywhere. They include only the merges you approved.',
     bi: 'For business intelligence tools',
     biIntro: 'A ready package with the cleaned data, a column dictionary and an import guide. Your dashboard does not transfer automatically; the dashboard description helps you recreate the charts.',
+    working: 'Creating the file. This can take a few seconds for large files…',
     done: 'File created: {{file}}',
     failed: 'The file could not be created.',
     kind: {

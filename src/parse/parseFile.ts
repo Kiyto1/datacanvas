@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { sanitizeHeaders } from '../core/headers';
 import { LIMITS, ParseError, type RawCell, type RawTable } from '../core/types';
+import { detectDelimiter, parseCsv } from './csv';
 import { decodeText } from './decode';
 
 type FileKind = 'csv' | 'xlsx';
@@ -21,32 +22,37 @@ function toCell(value: unknown): RawCell {
 }
 
 function finish(matrix: unknown[][], encoding: string, sheetName?: string): RawTable {
-  // Drop fully empty trailing/leading rows so the header row is the first real row.
-  const rows = matrix.map((r) => r.map(toCell));
-  while (rows.length > 0 && rows[rows.length - 1]!.every((c) => c === null)) rows.pop();
-  while (rows.length > 0 && rows[0]!.every((c) => c === null)) rows.shift();
-  if (rows.length === 0) throw new ParseError('empty', 'The file has no data.');
+  // Skip fully empty leading/trailing rows so the header row is the first real row.
+  const isBlank = (row: unknown[]) => row.every((c) => toCell(c) === null);
+  let first = 0;
+  while (first < matrix.length && isBlank(matrix[first]!)) first++;
+  let last = matrix.length - 1;
+  while (last >= first && isBlank(matrix[last]!)) last--;
+  if (first > last) throw new ParseError('empty', 'The file has no data.');
 
-  const headerRow = rows[0]!;
-  const dataRows = rows.slice(1);
+  const headerRow = matrix[first]!.map(toCell);
+  const dataCount = last - first;
   if (headerRow.length > LIMITS.maxColumns) {
     throw new ParseError('too-many-columns', `More than ${LIMITS.maxColumns} columns.`);
   }
-  if (dataRows.length > LIMITS.maxRows) {
+  if (dataCount > LIMITS.maxRows) {
     throw new ParseError('too-many-rows', `More than ${LIMITS.maxRows} rows.`);
   }
 
+  // One pass: type each cell once, pad short rows with null, drop extra cells.
   const width = headerRow.length;
-  const normalized = dataRows.map((r) => {
-    const out = r.slice(0, width);
-    while (out.length < width) out.push(null);
-    return out;
-  });
+  const rows: RawCell[][] = new Array<RawCell[]>(dataCount);
+  for (let i = 0; i < dataCount; i++) {
+    const source = matrix[first + 1 + i]!;
+    const out = new Array<RawCell>(width);
+    for (let j = 0; j < width; j++) out[j] = j < source.length ? toCell(source[j]) : null;
+    rows[i] = out;
+  }
   const originalHeaders = headerRow.map((c) => (c === null ? '' : String(c)));
   return {
     headers: sanitizeHeaders(originalHeaders),
     originalHeaders,
-    rows: normalized,
+    rows,
     encoding,
     ...(sheetName !== undefined ? { sheetName } : {}),
   };
@@ -63,13 +69,11 @@ export function parseFile(buffer: ArrayBuffer, fileName: string): RawTable {
   try {
     if (kind === 'csv') {
       const { text, encoding } = decodeText(new Uint8Array(buffer));
-      // type:'string' keeps SheetJS from guessing; we profile values ourselves.
-      const wb = XLSX.read(text, { type: 'string', raw: true, FS: fileName.toLowerCase().endsWith('.tsv') ? '\t' : undefined });
-      const name = wb.SheetNames[0];
-      const sheet = name ? wb.Sheets[name] : undefined;
-      if (!sheet) throw new ParseError('empty', 'The file has no data.');
-      const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, blankrows: false, defval: null });
-      return finish(matrix, encoding);
+      // Direct RFC 4180 parse: every field stays text (we profile values ourselves) and no per-cell
+      // objects are allocated, which keeps 100k-row files fast. Blank lines are dropped.
+      const delimiter = fileName.toLowerCase().endsWith('.tsv') ? '\t' : detectDelimiter(text);
+      const records = parseCsv(text, delimiter).filter((r) => !r.every((f) => f === ''));
+      return finish(records, encoding);
     }
 
     const wb = XLSX.read(buffer, { type: 'array', cellDates: true, dense: true });

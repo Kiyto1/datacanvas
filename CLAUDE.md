@@ -70,9 +70,28 @@ React UI → dashboard/filter state → versioned analysis request
 - Export contract (unit-tested): duplicate headers get `_2` suffix, empty headers become `column_N`, ISO dates without timezone shifts, `true`/`false` booleans, empty field = null, full numeric precision, inference failures exported as text and flagged.
 - Formula-injection guard handles CSV and XLSX separately: keep numbers typed (`-1500` stays a number) and neutralize only string cells that look like formulas.
 
-## Performance targets
+## Performance
 
-Stated as rows × columns: 10k×10, 50k×20, 100k×20, plus a wide 20k×100 case. Filter→chart update under ~300 ms at 100k×20. Use virtualized tables and enforce file/row/column limits.
+Targets are stated as rows × columns: 10k×10, 50k×20, 100k×20, plus a wide 20k×100 case; filter→chart update under ~300 ms at 100k×20.
+
+```bash
+npm run bench          # Node stage timings (vitest, writes bench-results.json)
+npm run bench:browser  # real worker + UI against the production build (writes test-results/browser-bench.json)
+```
+
+Measured on the dev machine (Windows, Node 22, Chromium), synthetic Arabic data from `src/perf/generate.ts`:
+
+| Case | Node: parse / profile / filter | Browser: load / filter / CSV export |
+|---|---|---|
+| 100k × 20 | 244 ms / 609 ms / 7 ms | 3.5 s / ~140 ms / 1.4 s |
+| 50k × 20 | 95 ms / 306 ms / 3.5 ms | 1.9 s / ~115 ms / 0.8 s |
+| 20k × 100 | 134 ms / 1.1 s / 1.4 ms | 4.1 s / ~147 ms / 2.3 s |
+
+XLSX export is the slow path (SheetJS serialization, ~4 s at 50k×20, ~9 s at 100k×20); it runs in the worker with a visible "creating file" message. Browser "load" includes Playwright pushing the file in, so real users should see less.
+
+What made the difference: CSV parsing uses our own RFC 4180 parser (`src/parse/csv.ts`, with delimiter detection for `;`/tab/`|`) instead of SheetJS (which allocates a cell object per cell: 11× slower); type inference samples up to 5,000 values per column (`SAMPLE_SIZE` in `inferColumns.ts`), but date columns are re-checked on every value so the day/month decision uses all the evidence. Keep the date rule's 5% outlier tolerance in mind: a lone `25/04/2026` among thousands of ambiguous dates does not settle the order; the user is asked.
+
+Use virtualized tables for any future full-data table view, and keep enforcing file/row/column limits.
 
 ## Tooling
 
