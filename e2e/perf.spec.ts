@@ -43,6 +43,7 @@ for (const c of CASES) {
     filterTimes.sort((a, b) => a - b);
 
     // Export CSV (worker builds the file, browser downloads it).
+    await page.getByTestId('export-open').click();
     const t1 = Date.now();
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-csv').click()]);
     await dl.path();

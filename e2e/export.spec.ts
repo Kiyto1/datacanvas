@@ -7,6 +7,11 @@ const csv =
 async function upload(page: Page, content: string) {
   await page.goto('/');
   await page.getByTestId('file-input').setInputFiles({ name: 'sales.csv', mimeType: 'text/csv', buffer: Buffer.from(content, 'utf8') });
+  await expect(page.getByTestId('export-open')).toBeVisible();
+}
+
+async function openExport(page: Page) {
+  await page.getByTestId('export-open').click();
   await expect(page.getByTestId('export-panel')).toBeVisible();
 }
 
@@ -22,6 +27,7 @@ test('downloads a cleaned CSV that reflects approved merges, with BOM and typed 
   await page.getByTestId('normalize-apply').click();
   await expect(page.getByTestId('normalize-status')).toBeVisible();
 
+  await openExport(page);
   const file = await download(page, 'export-csv');
   expect(file.name).toBe('sales-cleaned.csv');
   expect([...file.bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
@@ -35,6 +41,7 @@ test('downloads a cleaned CSV that reflects approved merges, with BOM and typed 
 
 test('downloads the Power BI package as a zip with the promised files', async ({ page }) => {
   await upload(page, csv);
+  await openExport(page);
   const file = await download(page, 'export-powerbi');
   expect(file.name).toBe('sales-powerbi.zip');
   const zip = file.bytes;
@@ -53,6 +60,7 @@ test('downloads XLSX, JSON and the dashboard description without any network req
     if (!u.startsWith('http://localhost:4173') && !u.startsWith('blob:') && !u.startsWith('data:')) external.push(u);
   });
   await upload(page, csv);
+  await openExport(page);
 
   const xlsx = await download(page, 'export-xlsx');
   expect(xlsx.name).toBe('sales-cleaned.xlsx');

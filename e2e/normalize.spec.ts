@@ -6,6 +6,7 @@ test('suggests merges, changes nothing until confirmed, and is reversible', asyn
   await page.goto('/');
   await page.getByTestId('file-input').setInputFiles({ name: 'cities.csv', mimeType: 'text/csv', buffer: Buffer.from(csv, 'utf8') });
 
+  await page.getByTestId('tab-data').click(); // the original values are visible in the data table
   await expect(page.getByTestId('normalization')).toBeVisible();
   await expect(page.getByTestId('suggestion-0')).toBeVisible();
   await expect(page.getByTestId('suggestion-1')).toBeVisible();

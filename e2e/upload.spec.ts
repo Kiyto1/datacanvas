@@ -17,6 +17,7 @@ test('uploads an Arabic CSV, parses it in a worker and shows a preview', async (
     buffer: Buffer.from(csv, 'utf8'),
   });
 
+  await page.getByTestId('tab-data').click();
   await expect(page.getByTestId('dataset-title')).toHaveText('sales.csv');
   await expect(page.getByTestId('dataset-counts')).toContainText('3');
   await expect(page.getByRole('columnheader', { name: 'المبيعات' })).toBeVisible();

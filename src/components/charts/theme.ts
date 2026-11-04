@@ -5,29 +5,29 @@ export type Scheme = 'light' | 'dark';
 /** Mirrors the tokens in index.css (validated reference palette). Canvas can't read CSS vars, so keep in sync. */
 export const PALETTE: Record<Scheme, { series: string[]; ink: string; muted: string; faint: string; grid: string; axis: string; surface: string }> = {
   light: {
-    series: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
-    ink: '#0b0b0b',
-    muted: '#52514e',
-    faint: '#898781',
-    grid: '#e1e0d9',
-    axis: '#c3c2b7',
-    surface: '#fcfcfb',
+    series: ['#635bff', '#16a34a', '#d97706', '#0ea5e9', '#dc2626', '#8b83ff', '#475467', '#db2777'],
+    ink: '#171717',
+    muted: '#667085',
+    faint: '#667085',
+    grid: '#e6e8ec',
+    axis: '#d3d7de',
+    surface: '#ffffff',
   },
   dark: {
-    series: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'],
-    ink: '#f0efec',
-    muted: '#c3c2b7',
-    faint: '#898781',
-    grid: '#2c2c2a',
-    axis: '#383835',
-    surface: '#1a1a19',
+    series: ['#8b83ff', '#4ade80', '#fbbf24', '#38bdf8', '#f87171', '#a19aff', '#a1a1aa', '#f472b6'],
+    ink: '#f5f5f5',
+    muted: '#a1a1aa',
+    faint: '#a1a1aa',
+    grid: '#292929',
+    axis: '#3a3a3a',
+    surface: '#1a1a1a',
   },
 };
 
 function current(): Scheme {
   if (typeof window === 'undefined' || !window.matchMedia) return 'light';
-  if (document.documentElement.dataset.theme === 'light') return 'light';
-  if (document.documentElement.dataset.theme === 'dark') return 'dark';
+  const explicit = document.documentElement.dataset.theme;
+  if (explicit === 'light' || explicit === 'dark') return explicit;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -37,7 +37,13 @@ export function useScheme(): Scheme {
     const query = window.matchMedia('(prefers-color-scheme: dark)');
     const update = () => setScheme(current());
     query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    // The theme switcher changes data-theme on <html>; charts repaint when it does.
+    const watch = new MutationObserver(update);
+    watch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      query.removeEventListener('change', update);
+      watch.disconnect();
+    };
   }, []);
   return scheme;
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+z.config({ jitless: true }); // no eval under our strict CSP (see normalize/schema.ts)
+
 export const aggregationSchema = z.enum(['sum', 'avg', 'min', 'max', 'count', 'distinctCount']);
 
 const id = z.string().min(1).max(100);

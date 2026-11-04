@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { DatasetSummary } from '../core/types';
 import type { ChangeLogEntry, NormalizationDecision } from '../normalize/types';
 import { normalizeInWorker, parseInWorker, WorkerError } from '../worker/client';
+import { withViewTransition } from '../core/transition';
 import { useDashboard } from './dashboard';
 
 // Only the lightweight summary lives here; the rows stay in the worker.
@@ -30,7 +31,7 @@ export const useDataset = create<DatasetState>((set) => ({
     try {
       const summary = await parseInWorker(file);
       useDashboard.getState().reset(); // filters, date choices and results belong to the previous file
-      set({ status: 'ready', summary, preview: summary.preview, applied: [], changes: [] });
+      withViewTransition(() => set({ status: 'ready', summary, preview: summary.preview, applied: [], changes: [] }));
     } catch (error) {
       if (error instanceof WorkerError && error.superseded) return;
       const code = error instanceof WorkerError ? error.code : 'unknown';
@@ -46,5 +47,8 @@ export const useDataset = create<DatasetState>((set) => ({
       set({ errorCode: error instanceof WorkerError ? error.code : 'unknown' });
     }
   },
-  reset: () => set({ status: 'idle', summary: null, preview: [], applied: [], changes: [], errorCode: null }),
+  reset: () => {
+    useDashboard.getState().reset();
+    withViewTransition(() => set({ status: 'idle', summary: null, preview: [], applied: [], changes: [], errorCode: null }));
+  },
 }));

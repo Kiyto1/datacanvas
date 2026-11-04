@@ -1,56 +1,168 @@
 @import 'tailwindcss';
 
-/* Design tokens. Chrome uses the validated reference ink/surface set; series colours are the
-   validated 8-slot categorical palette (fixed order, never cycled). Components consume these
-   through Tailwind utilities or var(). Dark values are stepped for the dark surface, not inverted. */
+/*
+  Design tokens. Fixed palette: white and #F8F9FB surfaces, #171717 ink, one accent (#635BFF).
+  Dark is a black foundation (#090909 / #111 / #1A1A1A), never navy. Warning amber marks
+  "needs your decision" moments only. Charts use the series values below (accent first).
+*/
 @theme {
-  --color-bg: #f9f9f7;
-  --color-surface: #fcfcfb;
-  --color-ink: #0b0b0b;
-  --color-muted: #52514e;
-  --color-faint: #898781;
-  --color-line: #e1e0d9;
-  --color-axis: #c3c2b7;
-  --color-brand: #2a78d6;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-sunken: #f8f9fb;
+  --color-ink: #171717;
+  --color-muted: #667085;
+  --color-faint: #667085;
+  --color-line: #e6e8ec;
+  --color-line-strong: #d3d7de;
+  --color-brand: #635bff;
+  --color-brand-strong: #5148e5;
   --color-brand-ink: #ffffff;
-  --color-accent: #006300;
-  --color-danger: #c52f2f;
-  --font-sans: 'IBM Plex Sans Arabic', 'Segoe UI', 'Tahoma', system-ui, sans-serif;
-  --radius-card: 0.5rem;
+  --color-brand-wash: #f0eeff;
+  --color-saffron: #d97706;
+  --color-saffron-wash: #fff4e5;
+  --color-saffron-ink: #92400e;
+  --color-on-warning: #171717;
+  --color-ok: #16a34a;
+  --color-ok-text: #15803d; /* success as text needs a darker step to reach 4.5:1 on white */
+  --color-danger: #dc2626;
+  --font-sans: 'Inter Variable', 'IBM Plex Sans Arabic', 'Segoe UI', 'Tahoma', system-ui, sans-serif;
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-pop: 0 16px 40px -12px rgb(16 24 40 / 0.18), 0 2px 6px rgb(16 24 40 / 0.06);
+  --shadow-window: 0 0 0 1px rgb(16 24 40 / 0.06), 0 24px 60px -24px rgb(81 72 229 / 0.35), 0 8px 24px -12px rgb(16 24 40 / 0.12);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #6250d6;
-  --series-8: #e34948;
+  --series-1: #635bff;
+  --series-2: #16a34a;
+  --series-3: #d97706;
+  --series-4: #0ea5e9;
+  --series-5: #dc2626;
+  --series-6: #8b83ff;
+  --series-7: #475467;
+  --series-8: #db2777;
+  --stage-a: #f0eeff;
+  --stage-b: #ffffff;
+  --stage-line: rgb(99 91 255 / 0.1);
+}
+
+/* Dark is its own set of steps from the same hues, validated on #090909, not an inversion. */
+:root[data-theme='dark'] {
+  --color-bg: #090909;
+  --color-surface: #1a1a1a;
+  --color-sunken: #111111;
+  --color-ink: #f5f5f5;
+  --color-muted: #a1a1aa;
+  --color-faint: #a1a1aa;
+  --color-line: #292929;
+  --color-line-strong: #3a3a3a;
+  --color-brand: #8b83ff;
+  --color-brand-strong: #a19aff;
+  --color-brand-ink: #090909;
+  --color-brand-wash: #211f38;
+  --color-saffron: #fbbf24;
+  --color-saffron-wash: #2a2210;
+  --color-saffron-ink: #fbbf24;
+  --color-on-warning: #090909;
+  --color-ok: #4ade80;
+  --color-ok-text: #4ade80;
+  --color-danger: #f87171;
+  --series-1: #8b83ff;
+  --series-2: #4ade80;
+  --series-3: #fbbf24;
+  --series-4: #38bdf8;
+  --series-5: #f87171;
+  --series-6: #a19aff;
+  --series-7: #a1a1aa;
+  --series-8: #f472b6;
+  --stage-a: #111111;
+  --stage-b: #090909;
+  --stage-line: rgb(255 255 255 / 0.045);
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --color-bg: #0d0d0d;
-    --color-surface: #1a1a19;
-    --color-ink: #f0efec;
-    --color-muted: #c3c2b7;
-    --color-faint: #898781;
-    --color-line: #2c2c2a;
-    --color-axis: #383835;
-    --color-brand: #3987e5;
-    --color-accent: #0ca30c;
-    --color-danger: #e66767;
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
+  :root:not([data-theme]) {
+    --color-bg: #090909;
+    --color-surface: #1a1a1a;
+    --color-sunken: #111111;
+    --color-ink: #f5f5f5;
+    --color-muted: #a1a1aa;
+    --color-faint: #a1a1aa;
+    --color-line: #292929;
+    --color-line-strong: #3a3a3a;
+    --color-brand: #8b83ff;
+    --color-brand-strong: #a19aff;
+    --color-brand-ink: #090909;
+    --color-brand-wash: #211f38;
+    --color-saffron: #fbbf24;
+    --color-saffron-wash: #2a2210;
+    --color-saffron-ink: #fbbf24;
+    --color-on-warning: #090909;
+    --color-ok: #4ade80;
+    --color-ok-text: #4ade80;
+    --color-danger: #f87171;
+    --series-1: #8b83ff;
+    --series-2: #4ade80;
+    --series-3: #fbbf24;
+    --series-4: #38bdf8;
+    --series-5: #f87171;
+    --series-6: #a19aff;
+    --series-7: #a1a1aa;
+    --series-8: #f472b6;
+    --stage-a: #111111;
+    --stage-b: #090909;
+    --stage-line: rgb(255 255 255 / 0.045);
+    color-scheme: dark;
   }
+}
+
+/*
+  The product window's backdrop: a pale accent wash with fine vertical rules, fading to the page.
+  Quiet texture only; it frames the product and never competes with it.
+*/
+.stage {
+  background-image:
+    repeating-linear-gradient(90deg, var(--stage-line) 0 1px, transparent 1px 56px),
+    linear-gradient(180deg, var(--stage-b) 0%, var(--stage-a) 100%);
+}
+.window {
+  box-shadow: var(--shadow-window);
+}
+
+/* Scroll reveal: elements start slightly low and transparent, then settle when they enter the view. */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s var(--ease-out),
+    transform 0.8s var(--ease-out);
+  transition-delay: calc(var(--d, 0) * 90ms);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Headlines: one confident weight. No letter-spacing in Arabic (it breaks the joins); a little for Latin. */
+.display {
+  font-weight: 600;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+:lang(en) .display,
+.display:lang(en) {
+  letter-spacing: -0.025em;
+}
+
+/* Two-tone headline: the first phrase carries the point, the rest recedes (Attio, Linear, Stripe). */
+.tone-rest {
+  color: var(--color-faint);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -63,7 +175,13 @@ body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: 'tnum' 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 /* Figures that must align vertically (tables, KPI strip) use tabular numerals. */
@@ -80,11 +198,74 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* One orchestrated entrance, then motion only in response to what the person does. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.fade {
+  animation: fade 0.4s var(--ease-out) both;
+}
+
+.pop {
+  animation: pop 0.16s var(--ease-out) both;
+}
+
+/* Cross-document-style transition from landing to workspace (View Transitions API, progressive). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+  animation-timing-function: var(--ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
   }
 }

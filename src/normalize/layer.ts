@@ -1,16 +1,8 @@
-import { z } from 'zod';
 import type { ChangeLogEntry, NormalizationDecision } from './types';
 import type { RawCell } from '../core/types';
 
-export const decisionsSchema = z
-  .array(
-    z.object({
-      columnId: z.string().min(1).max(64),
-      from: z.array(z.string().min(1).max(500)).min(1).max(1000),
-      to: z.string().min(1).max(500),
-    }),
-  )
-  .max(5000);
+// Pure display layer, shared by the worker and the landing-page demo. It must not import Zod:
+// the validation schema lives in ./schema.ts and is only used by the worker.
 
 /** columnId -> (original value -> approved display value) */
 export type DisplayMap = Map<string, Map<string, string>>;

@@ -2,7 +2,8 @@
 import { LIMITS, ParseError } from '../core/types';
 import { dateCandidateSchema, filtersSchema, specsSchema, type ChartSpec } from '../dashboard/types';
 import { exportRequestSchema, runExport } from '../export/run';
-import { buildDisplayMap, decisionsSchema, displayCell, summarizeChanges } from '../normalize/layer';
+import { buildDisplayMap, displayCell, summarizeChanges } from '../normalize/layer';
+import { decisionsSchema } from '../normalize/schema';
 import { suggestNormalizations } from '../normalize/suggest';
 import { parseFile } from '../parse/parseFile';
 import { inferColumns } from '../profile/inferColumns';

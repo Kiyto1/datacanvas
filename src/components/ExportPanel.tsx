@@ -8,6 +8,8 @@ import type { ExportRequest } from '../export/run';
 import { useDashboard } from '../store/dashboard';
 import { useUi } from '../store/ui';
 import { exportInWorker } from '../worker/client';
+import { Button } from './ui/Button';
+import { Popover } from './ui/Popover';
 
 interface Props {
   datasetName: string;
@@ -15,13 +17,17 @@ interface Props {
 }
 
 type Kind = ExportRequest['kind'];
-const FILES: Kind[] = ['csv', 'xlsx', 'json'];
-const PACKAGES: Kind[] = ['powerbi', 'metabase'];
+const GROUPS: { title: string; kinds: Kind[] }[] = [
+  { title: 'export.files', kinds: ['csv', 'xlsx', 'json'] },
+  { title: 'export.bi', kinds: ['powerbi', 'metabase', 'spec'] },
+];
 
-export function ExportPanel({ datasetName, columns }: Props) {
+/** Export as a popover from the top bar: a short command list, each row says what you get. */
+export function ExportMenu({ datasetName, columns }: Props) {
   const { t } = useTranslation();
   const lang = useUi((s) => s.lang);
   const dateChoices = useDashboard((s) => s.dateChoices);
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<Kind | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -43,44 +49,55 @@ export function ExportPanel({ datasetName, columns }: Props) {
     }
   }
 
-  const button = (kind: Kind) => (
-    <button
-      key={kind}
-      type="button"
-      disabled={busy !== null}
-      onClick={() => void run(kind)}
-      className="rounded-lg border border-line bg-surface px-3 py-2 text-start text-sm hover:border-brand disabled:opacity-50"
-      data-testid={`export-${kind}`}
-    >
-      <span className="block font-semibold">{t(`export.kind.${kind}.title`)}</span>
-      <span className="block text-muted">{t(`export.kind.${kind}.hint`)}</span>
-    </button>
-  );
-
   return (
-    <section className="border-t border-line pt-4" aria-label={t('export.title')} data-testid="export-panel">
-      <h2 className="text-xl font-semibold">{t('export.title')}</h2>
-      <p className="mt-1 max-w-prose text-sm text-muted">{t('export.intro')}</p>
-      <div className="mt-3 flex flex-wrap gap-3">{FILES.map(button)}</div>
-      <h3 className="mt-5 text-base font-semibold">{t('export.bi')}</h3>
-      <p className="mt-1 max-w-prose text-sm text-muted">{t('export.biIntro')}</p>
-      <div className="mt-3 flex flex-wrap gap-3">{PACKAGES.map(button)}</div>
-      <div className="mt-3">{button('spec')}</div>
-      {busy && (
-        <p role="status" className="mt-3 text-sm text-muted" data-testid="export-working">
-          {t('export.working')}
-        </p>
-      )}
-      {done && (
-        <p role="status" className="mt-3 text-sm text-accent" data-testid="export-done">
-          {t('export.done', { file: done })}
-        </p>
-      )}
-      {failed && (
-        <p role="alert" className="mt-3 text-sm text-danger">
-          {t('export.failed')}
-        </p>
-      )}
-    </section>
+    <Popover
+      open={open}
+      onClose={() => setOpen(false)}
+      label={t('export.title')}
+      width="w-[22rem]"
+      trigger={
+        <Button variant="secondary" size="sm" icon="download" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="export-open">
+          {t('ws.export')}
+        </Button>
+      }
+    >
+      <div data-testid="export-panel" className="flex flex-col gap-3">
+        <p className="px-1 text-xs leading-relaxed text-muted">{t('export.intro')}</p>
+        {GROUPS.map((group) => (
+          <div key={group.title}>
+            <p className="px-1 pb-1 text-xs font-medium text-faint">{t(group.title)}</p>
+            <ul className="flex flex-col">
+              {group.kinds.map((kind) => (
+                <li key={kind}>
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => void run(kind)}
+                    className="flex w-full flex-col rounded-lg px-2.5 py-2 text-start transition-colors hover:bg-sunken disabled:opacity-50"
+                    data-testid={`export-${kind}`}
+                  >
+                    <span className="text-sm font-medium">{t(`export.kind.${kind}.title`)}</span>
+                    <span className="text-xs text-muted">{t(`export.kind.${kind}.hint`)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <div className="min-h-5 px-1 text-xs" aria-live="polite">
+          {busy && (
+            <p className="text-muted" data-testid="export-working">
+              {t('export.working')}
+            </p>
+          )}
+          {done && !busy && (
+            <p className="text-ok-text" data-testid="export-done">
+              {t('export.done', { file: done })}
+            </p>
+          )}
+          {failed && <p className="text-danger">{t('export.failed')}</p>}
+        </div>
+      </div>
+    </Popover>
   );
 }

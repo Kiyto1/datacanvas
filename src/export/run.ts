@@ -1,4 +1,7 @@
 import { z } from 'zod';
+
+z.config({ jitless: true }); // no eval under our strict CSP (see normalize/schema.ts)
+
 import { summarizeChanges } from '../normalize/layer';
 import type { ColumnStore } from '../worker/columnStore';
 import { toCsv } from './csv';

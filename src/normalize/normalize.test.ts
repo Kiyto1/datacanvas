@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { RawCell } from '../core/types';
 import { inferColumns } from '../profile/inferColumns';
 import { aliasEntryFor } from './aliases';
-import { buildDisplayMap, decisionsSchema, displayCell, summarizeChanges } from './layer';
+import { buildDisplayMap, displayCell, summarizeChanges } from './layer';
+import { decisionsSchema } from './schema';
 import { suggestForColumn, suggestNormalizations } from './suggest';
 
 const counts = (pairs: [string, number][]) => new Map(pairs);

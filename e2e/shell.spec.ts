@@ -42,7 +42,8 @@ test('language switch flips direction to LTR and back', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'English' }).click();
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-  await expect(page.getByRole('heading', { name: 'DataCanvas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your data, made clearer.' })).toBeVisible();
   await page.getByRole('button', { name: 'العربية' }).click();
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.getByRole('heading', { name: 'بياناتك، بصورة أوضح.' })).toBeVisible();
 });
