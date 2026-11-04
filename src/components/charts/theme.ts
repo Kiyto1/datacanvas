@@ -5,16 +5,16 @@ export type Scheme = 'light' | 'dark';
 /** Mirrors the tokens in index.css (validated reference palette). Canvas can't read CSS vars, so keep in sync. */
 export const PALETTE: Record<Scheme, { series: string[]; ink: string; muted: string; faint: string; grid: string; axis: string; surface: string }> = {
   light: {
-    series: ['#635bff', '#16a34a', '#d97706', '#0ea5e9', '#dc2626', '#8b83ff', '#475467', '#db2777'],
+    series: ['#2b2e34', '#3d74b8', '#b7791f', '#7a6bb5', '#2e8b62', '#7c828d', '#c0504d', '#b9578f'],
     ink: '#171717',
-    muted: '#667085',
-    faint: '#667085',
-    grid: '#e6e8ec',
-    axis: '#d3d7de',
-    surface: '#ffffff',
+    muted: '#5e636e',
+    faint: '#5e636e',
+    grid: '#e1e1de',
+    axis: '#cfcfcb',
+    surface: '#fbfbfa',
   },
   dark: {
-    series: ['#8b83ff', '#4ade80', '#fbbf24', '#38bdf8', '#f87171', '#a19aff', '#a1a1aa', '#f472b6'],
+    series: ['#e4e4e7', '#6fa8e8', '#e3a84a', '#a89bea', '#5ec48e', '#8a8a93', '#e58585', '#e58fc4'],
     ink: '#f5f5f5',
     muted: '#a1a1aa',
     faint: '#a1a1aa',

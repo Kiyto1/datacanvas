@@ -3,24 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { formatNumber } from '../../core/format';
 import { useUi } from '../../store/ui';
 import { Icon } from '../ui/Icon';
-import { easeOut, lerp, prefersReducedMotion, span, useScrollProgress } from './motion';
+import { easeOut, lerp, prefersReducedMotion, span, useInView } from './motion';
 import { buildStory, STORY_HEADERS, STORY_ROWS, type StoryModel } from './storyData';
 
-/** Where each chapter begins on the 0..1 scroll range, and where the stepper parks for each. */
-const CHAPTER_START = [0, 0.22, 0.5, 0.74] as const;
+/** Where the story rests for each of the four steps on its 0..1 timeline. */
 const STEP_P = [0.12, 0.4, 0.62, 0.97] as const;
-
-function useWide(): boolean {
-  const query = '(min-width: 1024px)';
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const on = () => setWide(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return wide;
-}
 
 function Stage({ p, model }: { p: number; model: StoryModel }) {
   const { t } = useTranslation();
@@ -99,7 +86,7 @@ function Stage({ p, model }: { p: number; model: StoryModel }) {
             return (
               <div
                 key={i}
-                className={`tabular grid grid-cols-[1.1fr_1.5fr_1.3fr_0.9fr] items-center border-b border-line/60 text-xs transition-colors duration-300 sm:text-sm ${scanned ? 'bg-brand-wash' : ''}`}
+                className={`tabular grid grid-cols-[1.1fr_1.5fr_1.3fr_0.9fr] items-center border-b border-line/60 text-xs transition-colors duration-300 sm:text-sm ${scanned ? 'bg-sunken' : ''}`}
               >
                 <span className="text-muted" dir="ltr" style={{ textAlign: 'start' }}>
                   {date}
@@ -202,87 +189,111 @@ function Stage({ p, model }: { p: number; model: StoryModel }) {
   );
 }
 
+/** Animates `p` toward the target with an ease, quicker for short hops. Reduced motion jumps. */
+function useGlide(target: number): number {
+  const [p, setP] = useState(target);
+  const current = useRef(target);
+  useEffect(() => {
+    const from = current.current;
+    if (prefersReducedMotion() || from === target) {
+      current.current = target;
+      setP(target);
+      return;
+    }
+    const duration = Math.min(1300, Math.max(550, Math.abs(target - from) * 3200));
+    const t0 = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - t0) / duration);
+      const eased = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      current.current = from + (target - from) * eased;
+      setP(k === 1 ? target : current.current);
+      if (k < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
+  return p;
+}
+
+/** Dwell time on each step while the story plays itself, in milliseconds. */
+const DWELL = [1300, 2300, 2300] as const;
+
+/**
+ * The sheet-to-dashboard story. It does not pin the page: it plays once, by itself, the first time it
+ * is on screen, and the four steps are always clickable. Scrolling is never held hostage.
+ */
 export function Story() {
   const { t } = useTranslation();
   const model = useMemo(() => buildStory(), []);
-  const wide = useWide();
-  const reduced = prefersReducedMotion();
-  const sticky = wide && !reduced;
-  const outer = useRef<HTMLDivElement>(null);
-  const scrollP = useScrollProgress(outer, sticky);
-  const [step, setStep] = useState(0);
-  const p = sticky ? scrollP : STEP_P[step]!;
+  const stageRef = useRef<HTMLDivElement>(null);
+  const seen = useInView(stageRef, '0px 0px -25% 0px');
+  const [step, setStep] = useState(prefersReducedMotion() ? STEP_P.length - 1 : 0); // reduced motion: show the finished dashboard
+  const [manual, setManual] = useState(prefersReducedMotion());
+  const p = useGlide(STEP_P[step]!);
+  const active = step;
 
-  const active = CHAPTER_START.reduce<number>((acc, start, i) => (p >= start ? i : acc), 0);
+  // Autoplay once the stage is in view, until the visitor takes over or the last step is reached.
+  useEffect(() => {
+    if (!seen || manual || step >= STEP_P.length - 1) return;
+    const id = window.setTimeout(() => setStep((s) => s + 1), DWELL[step]!);
+    return () => window.clearTimeout(id);
+  }, [seen, manual, step]);
+
   const chapters = [1, 2, 3, 4].map((n) => ({
     title: t(`story.ch${n}.title`),
     text: t(`story.ch${n}.text`, { raw: model.rawCities, groups: model.mergedCities }),
   }));
 
   const jump = (i: number) => {
-    if (!sticky) return setStep(i);
-    const el = outer.current;
-    if (!el) return;
-    const scrollable = el.offsetHeight - window.innerHeight;
-    const target = el.offsetTop + scrollable * (STEP_P[i]! > 0.95 ? 0.99 : CHAPTER_START[i]! + 0.02);
-    window.scrollTo({ top: target, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    setManual(true);
+    setStep(i);
   };
 
   return (
-    <section id="story" className="" aria-labelledby="story-title" data-testid="story">
-      <div className="mx-auto max-w-6xl px-5 pb-6 pt-24 sm:px-8">
+    <section id="story" aria-labelledby="story-title" data-testid="story">
+      <div className="mx-auto max-w-6xl px-5 pb-10 pt-24 sm:px-8">
         <h2 id="story-title" className="display max-w-3xl text-4xl leading-[1.2] sm:text-5xl">
           {t('story.title.lead')} <span className="tone-rest">{t('story.title.rest')}</span>
         </h2>
       </div>
 
-      <div ref={outer} style={sticky ? { height: '460vh' } : undefined}>
-        <div className={sticky ? 'sticky top-0 flex h-screen items-center' : 'py-8'}>
-          <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 sm:px-8 lg:grid-cols-12">
-            <ol className="relative flex flex-col gap-2 lg:col-span-3" aria-label={t('story.chapters')}>
-              {chapters.map((c, i) => {
-                const isActive = i === active;
-                return (
-                  <li key={c.title}>
-                    <button
-                      type="button"
-                      onClick={() => jump(i)}
-                      aria-current={isActive ? 'step' : undefined}
-                      className={`w-full border-s-2 py-2.5 ps-5 text-start transition-colors duration-300 ${isActive ? 'border-brand text-ink' : 'border-line text-muted hover:border-line-strong hover:text-ink'}`}
-                      data-testid={`story-chapter-${i}`}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className={`tabular grid size-6 shrink-0 place-items-center rounded-full text-xs ${isActive ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'}`}>{i + 1}</span>
-                        <span className="text-lg font-medium">{c.title}</span>
-                      </span>
-                      <span
-                        className="grid transition-[grid-template-rows] duration-300"
-                        style={{ gridTemplateRows: isActive ? '1fr' : '0fr' }}
-                      >
-                        <span className="overflow-hidden">
-                          <span className="block pb-1 pt-2 ps-9 leading-relaxed text-muted">{c.text}</span>
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-            {/* On phones the stage comes first, so tapping a step shows its effect right away. */}
-            <div className="order-first lg:order-none lg:col-span-9">
-              <div className="mx-auto" style={{ maxWidth: 'min(100%, calc((100vh - 9rem) * 1.6))' }}>
-                <Stage p={p} model={model} />
-              </div>
-              {sticky && (
-                <div className="mx-auto mt-4 h-0.5 overflow-hidden rounded-full bg-line" aria-hidden="true" style={{ maxWidth: 'min(100%, calc((100vh - 9rem) * 1.6))' }}>
-                  <div className="h-full bg-brand" style={{ width: `${p * 100}%` }} />
-                </div>
-              )}
-            </div>
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 sm:px-8 lg:grid-cols-12">
+        <ol className="relative flex flex-col gap-2 lg:col-span-3" aria-label={t('story.chapters')}>
+          {chapters.map((c, i) => {
+            const isActive = i === active;
+            return (
+              <li key={c.title}>
+                <button
+                  type="button"
+                  onClick={() => jump(i)}
+                  aria-current={isActive ? 'step' : undefined}
+                  className={`w-full border-s-2 py-2.5 ps-5 text-start transition-colors duration-300 ${isActive ? 'border-brand text-ink' : 'border-line text-muted hover:border-line-strong hover:text-ink'}`}
+                  data-testid={`story-chapter-${i}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className={`tabular grid size-6 shrink-0 place-items-center rounded-full text-xs ${isActive ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'}`}>{i + 1}</span>
+                    <span className="text-lg font-medium">{c.title}</span>
+                  </span>
+                  <span className="grid transition-[grid-template-rows] duration-300" style={{ gridTemplateRows: isActive ? '1fr' : '0fr' }}>
+                    <span className="overflow-hidden">
+                      <span className="block pb-1 pt-2 ps-9 leading-relaxed text-muted">{c.text}</span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        {/* On phones the stage comes first, so tapping a step shows its effect right away. */}
+        <div ref={stageRef} className="order-first lg:order-none lg:col-span-9">
+          <Stage p={p} model={model} />
+          <div className="mt-4 h-0.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
+            <div className="h-full bg-brand" style={{ width: `${p * 100}%` }} />
           </div>
         </div>
       </div>
-      <div className="h-16" />
+      <div className="h-24" />
     </section>
   );
 }

@@ -1,50 +1,50 @@
 @import 'tailwindcss';
 
 /*
-  Design tokens. Fixed palette: white and #F8F9FB surfaces, #171717 ink, one accent (#635BFF).
-  Dark is a black foundation (#090909 / #111 / #1A1A1A), never navy. Warning amber marks
+  Design tokens. Soft neutral light surfaces (off-white, easy on the eyes), #171717 ink, and an ink accent shared with dark (silver there). No purple anywhere.
+  Dark is a black foundation (#090909 / #111 / #1A1A1A), never navy, with a restrained silver-white accent (no purple). Warning amber marks
   "needs your decision" moments only. Charts use the series values below (accent first).
 */
 @theme {
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-sunken: #f8f9fb;
+  --color-bg: #f6f6f5;
+  --color-surface: #fbfbfa;
+  --color-sunken: #eeeeec;
   --color-ink: #171717;
-  --color-muted: #667085;
-  --color-faint: #667085;
-  --color-line: #e6e8ec;
-  --color-line-strong: #d3d7de;
-  --color-brand: #635bff;
-  --color-brand-strong: #5148e5;
-  --color-brand-ink: #ffffff;
-  --color-brand-wash: #f0eeff;
+  --color-muted: #5e636e;
+  --color-faint: #5e636e;
+  --color-line: #e1e1de;
+  --color-line-strong: #cfcfcb;
+  --color-brand: #171717;
+  --color-brand-strong: #171717;
+  --color-brand-ink: #fafafa;
+  --color-brand-wash: #e7e7e4;
   --color-saffron: #d97706;
-  --color-saffron-wash: #fff4e5;
-  --color-saffron-ink: #92400e;
+  --color-saffron-wash: #fbefdb;
+  --color-saffron-ink: #8a3b0a;
   --color-on-warning: #171717;
   --color-ok: #16a34a;
-  --color-ok-text: #15803d; /* success as text needs a darker step to reach 4.5:1 on white */
-  --color-danger: #dc2626;
+  --color-ok-text: #15803d; /* success as text needs a darker step to reach 4.5:1 on light surfaces */
+  --color-danger: #c42323;
   --font-sans: 'Inter Variable', 'IBM Plex Sans Arabic', 'Segoe UI', 'Tahoma', system-ui, sans-serif;
   --radius-card: 0.75rem;
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
-  --shadow-pop: 0 16px 40px -12px rgb(16 24 40 / 0.18), 0 2px 6px rgb(16 24 40 / 0.06);
-  --shadow-window: 0 0 0 1px rgb(16 24 40 / 0.06), 0 24px 60px -24px rgb(81 72 229 / 0.35), 0 8px 24px -12px rgb(16 24 40 / 0.12);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.18), 0 2px 6px rgb(0 0 0 / 0.06);
+  --shadow-window: 0 0 0 1px rgb(0 0 0 / 0.06), 0 24px 60px -28px rgb(0 0 0 / 0.28), 0 8px 24px -14px rgb(0 0 0 / 0.1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --series-1: #635bff;
-  --series-2: #16a34a;
-  --series-3: #d97706;
-  --series-4: #0ea5e9;
-  --series-5: #dc2626;
-  --series-6: #8b83ff;
-  --series-7: #475467;
-  --series-8: #db2777;
-  --stage-a: #f0eeff;
-  --stage-b: #ffffff;
-  --stage-line: rgb(99 91 255 / 0.1);
+  --series-1: #2b2e34;
+  --series-2: #3d74b8;
+  --series-3: #b7791f;
+  --series-4: #7a6bb5;
+  --series-5: #2e8b62;
+  --series-6: #7c828d;
+  --series-7: #c0504d;
+  --series-8: #b9578f;
+  --stage-a: #ebebe8;
+  --stage-b: #f6f6f5;
+  --stage-line: rgb(0 0 0 / 0.04);
 }
 
 /* Dark is its own set of steps from the same hues, validated on #090909, not an inversion. */
@@ -57,10 +57,10 @@
   --color-faint: #a1a1aa;
   --color-line: #292929;
   --color-line-strong: #3a3a3a;
-  --color-brand: #8b83ff;
-  --color-brand-strong: #a19aff;
+  --color-brand: #ededed;
+  --color-brand-strong: #ffffff;
   --color-brand-ink: #090909;
-  --color-brand-wash: #211f38;
+  --color-brand-wash: #262626;
   --color-saffron: #fbbf24;
   --color-saffron-wash: #2a2210;
   --color-saffron-ink: #fbbf24;
@@ -68,17 +68,18 @@
   --color-ok: #4ade80;
   --color-ok-text: #4ade80;
   --color-danger: #f87171;
-  --series-1: #8b83ff;
-  --series-2: #4ade80;
-  --series-3: #fbbf24;
-  --series-4: #38bdf8;
-  --series-5: #f87171;
-  --series-6: #a19aff;
-  --series-7: #a1a1aa;
-  --series-8: #f472b6;
+  --series-1: #e4e4e7;
+  --series-2: #6fa8e8;
+  --series-3: #e3a84a;
+  --series-4: #a89bea;
+  --series-5: #5ec48e;
+  --series-6: #8a8a93;
+  --series-7: #e58585;
+  --series-8: #e58fc4;
   --stage-a: #111111;
   --stage-b: #090909;
   --stage-line: rgb(255 255 255 / 0.045);
+  --shadow-window: 0 0 0 1px rgb(255 255 255 / 0.07), 0 28px 70px -28px rgb(0 0 0 / 0.9);
   color-scheme: dark;
 }
 
@@ -92,10 +93,10 @@
     --color-faint: #a1a1aa;
     --color-line: #292929;
     --color-line-strong: #3a3a3a;
-    --color-brand: #8b83ff;
-    --color-brand-strong: #a19aff;
+    --color-brand: #ededed;
+    --color-brand-strong: #ffffff;
     --color-brand-ink: #090909;
-    --color-brand-wash: #211f38;
+    --color-brand-wash: #262626;
     --color-saffron: #fbbf24;
     --color-saffron-wash: #2a2210;
     --color-saffron-ink: #fbbf24;
@@ -103,17 +104,18 @@
     --color-ok: #4ade80;
     --color-ok-text: #4ade80;
     --color-danger: #f87171;
-    --series-1: #8b83ff;
-    --series-2: #4ade80;
-    --series-3: #fbbf24;
-    --series-4: #38bdf8;
-    --series-5: #f87171;
-    --series-6: #a19aff;
-    --series-7: #a1a1aa;
-    --series-8: #f472b6;
+    --series-1: #e4e4e7;
+    --series-2: #6fa8e8;
+    --series-3: #e3a84a;
+    --series-4: #a89bea;
+    --series-5: #5ec48e;
+    --series-6: #8a8a93;
+    --series-7: #e58585;
+    --series-8: #e58fc4;
     --stage-a: #111111;
     --stage-b: #090909;
     --stage-line: rgb(255 255 255 / 0.045);
+    --shadow-window: 0 0 0 1px rgb(255 255 255 / 0.07), 0 28px 70px -28px rgb(0 0 0 / 0.9);
     color-scheme: dark;
   }
 }

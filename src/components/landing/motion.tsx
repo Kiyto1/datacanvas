@@ -36,40 +36,6 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
   );
 }
 
-/**
- * Scroll progress 0..1 of a tall container while its sticky child is pinned: 0 when the container's
- * top reaches the viewport top, 1 when its bottom reaches the viewport bottom. Quantised so React
- * re-renders a small, cheap tree a couple of hundred times over the whole scroll, not on every pixel.
- */
-export function useScrollProgress(ref: RefObject<HTMLElement | null>, enabled: boolean): number {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    if (!enabled) return;
-    const el = ref.current;
-    if (!el) return;
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const rect = el.getBoundingClientRect();
-      const scrollable = rect.height - window.innerHeight;
-      const p = scrollable <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / scrollable));
-      setProgress((prev) => (Math.abs(prev - p) < 0.002 ? prev : Math.round(p * 1000) / 1000));
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
-    };
-    measure();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [ref, enabled]);
-  return progress;
-}
-
 /** Writes normalised pointer position (-1..1) to --mx / --my on the element, for gentle parallax. */
 export function usePointerParallax(ref: RefObject<HTMLElement | null>): void {
   useEffect(() => {

@@ -1,42 +1,31 @@
 import { expect, test, type Page } from '@playwright/test';
 
-async function scrollStoryTo(page: Page, progress: number) {
-  await page.evaluate((p) => {
-    const outer = document.querySelector('[data-testid=story]')!.children[1] as HTMLElement;
-    const top = outer.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo(0, top + (outer.offsetHeight - window.innerHeight) * p);
-  }, progress);
-}
-
 const progressOf = async (page: Page) => Number(await page.getByTestId('story-stage').getAttribute('data-progress'));
 
-test.describe('scroll story (desktop)', () => {
+test.describe('story (desktop)', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('is scrubbed by scroll: chapters advance and the sheet becomes the dashboard', async ({ page }) => {
+  test('does not pin the page, and plays itself to the dashboard when it comes into view', async ({ page }) => {
     await page.goto('/');
-    await scrollStoryTo(page, 0.08);
-    await expect(page.getByTestId('story-chapter-0')).toHaveAttribute('aria-current', 'step');
-
-    await scrollStoryTo(page, 0.38);
-    await expect(page.getByTestId('story-chapter-1')).toHaveAttribute('aria-current', 'step');
-    await expect(page.getByTestId('story-note')).toContainText('اقتراح'); // the suggestion the engine produced
-
-    await scrollStoryTo(page, 0.62);
-    await expect(page.getByTestId('story-chapter-2')).toHaveAttribute('aria-current', 'step');
-
-    await scrollStoryTo(page, 0.97);
-    await expect(page.getByTestId('story-chapter-3')).toHaveAttribute('aria-current', 'step');
+    // Not a tall pinned scroll container: the section is only as tall as its content.
+    const height = await page.evaluate(() => document.querySelector<HTMLElement>('[data-testid=story]')!.offsetHeight);
+    expect(height).toBeLessThan(1400);
+    await page.getByTestId('story-stage').scrollIntoViewIfNeeded();
+    await expect(page.getByTestId('story-chapter-3')).toHaveAttribute('aria-current', 'step', { timeout: 15000 });
     // Numbers come from the real engine: 12 records, 28,100 total, 10 spellings merged into 5 cities.
     await expect(page.getByTestId('story-kpi')).toHaveText(['12', '28,100', '5']);
   });
 
-  test('clicking a chapter jumps the scroll to it', async ({ page }) => {
+  test('chapters are clickable and take over from the autoplay', async ({ page }) => {
     await page.goto('/');
-    await scrollStoryTo(page, 0.02);
-    const before = await progressOf(page);
-    await page.getByTestId('story-chapter-2').click();
-    await expect.poll(() => progressOf(page), { timeout: 5000 }).toBeGreaterThan(before + 0.3);
+    await page.getByTestId('story-stage').scrollIntoViewIfNeeded();
+    await page.getByTestId('story-chapter-1').click();
+    await expect(page.getByTestId('story-chapter-1')).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByTestId('story-note')).toContainText('اقتراح'); // the suggestion the engine produced
+    await page.waitForTimeout(3500);
+    await expect(page.getByTestId('story-chapter-1')).toHaveAttribute('aria-current', 'step'); // stays where the visitor put it
+    await page.getByTestId('story-chapter-3').click();
+    await expect.poll(() => progressOf(page), { timeout: 5000 }).toBeGreaterThan(0.9);
   });
 });
 
@@ -95,7 +84,7 @@ test.describe('phone', () => {
     await expect(page.getByTestId('story-stage')).toBeVisible();
     await page.getByTestId('story-chapter-3').click();
     await expect(page.getByTestId('story-chapter-3')).toHaveAttribute('aria-current', 'step');
-    expect(await progressOf(page)).toBeGreaterThan(0.9);
+    await expect.poll(() => progressOf(page), { timeout: 5000 }).toBeGreaterThan(0.9);
     await page.getByTestId('story-chapter-0').click();
     await expect(page.getByTestId('story-chapter-0')).toHaveAttribute('aria-current', 'step');
   });
@@ -106,8 +95,8 @@ test.describe('reduced motion', () => {
 
   test('shows everything without scroll animation: no pinned story, no hidden reveals', async ({ page }) => {
     await page.goto('/');
-    const pinned = await page.evaluate(() => (document.querySelector('[data-testid=story]')!.children[1] as HTMLElement).style.height);
-    expect(pinned).toBe(''); // not a tall scroll-scrubbed stage
+    await page.getByTestId('story-stage').scrollIntoViewIfNeeded();
+    await expect(page.getByTestId('story-chapter-3')).toHaveAttribute('aria-current', 'step'); // no animation: it shows the finished state
     await page.locator('#how').scrollIntoViewIfNeeded();
     const hidden = await page.evaluate(() => [...document.querySelectorAll('.reveal')].filter((el) => getComputedStyle(el).opacity !== '1').length);
     expect(hidden).toBe(0);
