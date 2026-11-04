@@ -1,3 +1,4 @@
+import type { NormalizationSuggestion } from '../normalize/types';
 import type { DateInference } from '../profile/dates';
 
 export type ColumnType = 'string' | 'number' | 'date' | 'boolean';
@@ -51,6 +52,7 @@ export interface DatasetSummary {
   headers: string[];
   originalHeaders: string[];
   columns: ColumnProfile[];
+  suggestions: NormalizationSuggestion[];
   preview: RawCell[][];
   encoding: string;
   sheetName?: string;

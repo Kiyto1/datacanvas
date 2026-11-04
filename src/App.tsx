@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { DatasetPreview } from './components/DatasetPreview';
+import { NormalizationReview } from './components/NormalizationReview';
 import { UploadDropzone } from './components/UploadDropzone';
 import { useDataset } from './store/dataset';
 import { useUi } from './store/ui';
@@ -8,7 +9,7 @@ export default function App() {
   const { t } = useTranslation();
   const lang = useUi((s) => s.lang);
   const setLang = useUi((s) => s.setLang);
-  const { status, summary, errorCode, load } = useDataset();
+  const { status, summary, preview, applied, changes, errorCode, load, applyNormalization } = useDataset();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-10">
@@ -30,7 +31,19 @@ export default function App() {
           {t(`errors.${errorCode ?? 'unknown'}`, { defaultValue: t('errors.unknown') })}
         </p>
       )}
-      {status === 'ready' && summary && <DatasetPreview summary={summary} />}
+      {status === 'ready' && summary && (
+        <>
+          <NormalizationReview
+            key={summary.id}
+            suggestions={summary.suggestions}
+            columns={summary.columns}
+            applied={applied}
+            changes={changes}
+            onApply={(d) => void applyNormalization(d)}
+          />
+          <DatasetPreview summary={summary} rows={preview} />
+        </>
+      )}
       <p className="text-sm text-accent" data-testid="privacy-badge">
         {t('privacy.badge')}
       </p>

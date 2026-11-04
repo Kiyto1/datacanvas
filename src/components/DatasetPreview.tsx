@@ -7,7 +7,13 @@ function formatCell(cell: RawCell): string {
   return String(cell);
 }
 
-export function DatasetPreview({ summary }: { summary: DatasetSummary }) {
+interface Props {
+  summary: DatasetSummary;
+  /** Rows to show (original or with approved merges applied). */
+  rows: RawCell[][];
+}
+
+export function DatasetPreview({ summary, rows }: Props) {
   const { t } = useTranslation();
   return (
     <section className="rounded-card border border-line bg-surface p-4" aria-label={t('preview.title')}>
@@ -37,7 +43,7 @@ export function DatasetPreview({ summary }: { summary: DatasetSummary }) {
             </tr>
           </thead>
           <tbody>
-            {summary.preview.map((row, r) => (
+            {rows.map((row, r) => (
               <tr key={r}>
                 {row.map((cell, c) => (
                   <td key={c} className="border-b border-line/60 px-2 py-1">

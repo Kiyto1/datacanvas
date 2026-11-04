@@ -1,19 +1,31 @@
-import type { DatasetSummary, ParseErrorCode } from '../core/types';
+import type { DatasetSummary, RawCell } from '../core/types';
+import type { ChangeLogEntry, NormalizationDecision } from '../normalize/types';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
+type ErrorCode = Extract<WorkerResponse, { type: 'error' }>['code'];
+
 export class WorkerError extends Error {
-  readonly code: ParseErrorCode | 'unknown';
-  constructor(code: ParseErrorCode | 'unknown', message: string) {
+  readonly code: ErrorCode;
+  readonly superseded: boolean;
+  constructor(code: ErrorCode, message: string, superseded = false) {
     super(message);
     this.name = 'WorkerError';
     this.code = code;
+    this.superseded = superseded;
   }
+}
+
+type Kind = WorkerRequest['type'];
+interface Pending {
+  kind: Kind;
+  resolve: (r: WorkerResponse) => void;
+  reject: (e: Error) => void;
 }
 
 let worker: Worker | null = null;
 let nextRequestId = 0;
-let latestRequestId = 0;
-const pending = new Map<number, { resolve: (s: DatasetSummary) => void; reject: (e: Error) => void }>();
+const latest: Record<Kind, number> = { parse: 0, normalize: 0 };
+const pending = new Map<number, Pending>();
 
 function getWorker(): Worker {
   if (worker) return worker;
@@ -23,13 +35,13 @@ function getWorker(): Worker {
     const entry = pending.get(msg.requestId);
     if (!entry) return;
     pending.delete(msg.requestId);
-    // Stale responses (an older request finishing after a newer one started) are ignored.
-    if (msg.requestId !== latestRequestId) {
-      entry.reject(new WorkerError('unknown', 'Superseded by a newer request.'));
+    // A newer request of the same kind exists: this answer is stale and must not overwrite it.
+    if (msg.requestId !== latest[entry.kind]) {
+      entry.reject(new WorkerError('unknown', 'Superseded by a newer request.', true));
       return;
     }
-    if (msg.type === 'parsed') entry.resolve(msg.summary);
-    else entry.reject(new WorkerError(msg.code, msg.message));
+    if (msg.type === 'error') entry.reject(new WorkerError(msg.code, msg.message));
+    else entry.resolve(msg);
   };
   worker.onerror = () => {
     for (const entry of pending.values()) entry.reject(new WorkerError('unknown', 'Worker failed.'));
@@ -39,13 +51,26 @@ function getWorker(): Worker {
   return worker;
 }
 
+function send(kind: Kind, build: (requestId: number) => WorkerRequest, transfer: Transferable[] = []): Promise<WorkerResponse> {
+  const requestId = ++nextRequestId;
+  latest[kind] = requestId;
+  return new Promise((resolve, reject) => {
+    pending.set(requestId, { kind, resolve, reject });
+    getWorker().postMessage(build(requestId), transfer);
+  });
+}
+
 export async function parseInWorker(file: File): Promise<DatasetSummary> {
   const buffer = await file.arrayBuffer();
-  const requestId = ++nextRequestId;
-  latestRequestId = requestId;
-  const request: WorkerRequest = { type: 'parse', requestId, fileName: file.name, buffer };
-  return new Promise<DatasetSummary>((resolve, reject) => {
-    pending.set(requestId, { resolve, reject });
-    getWorker().postMessage(request, [buffer]);
-  });
+  const res = await send('parse', (requestId) => ({ type: 'parse', requestId, fileName: file.name, buffer }), [buffer]);
+  if (res.type !== 'parsed') throw new WorkerError('unknown', 'Unexpected response.');
+  return res.summary;
+}
+
+export async function normalizeInWorker(
+  decisions: NormalizationDecision[],
+): Promise<{ preview: RawCell[][]; changes: ChangeLogEntry[] }> {
+  const res = await send('normalize', (requestId) => ({ type: 'normalize', requestId, decisions }));
+  if (res.type !== 'normalized') throw new WorkerError('unknown', 'Unexpected response.');
+  return { preview: res.preview, changes: res.changes };
 }

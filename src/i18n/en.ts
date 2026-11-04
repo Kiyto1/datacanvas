@@ -3,6 +3,20 @@ export const en = {
   privacy: { badge: 'Processed on your device. The file is never uploaded.' },
   upload: { cta: 'Choose a file or drop it here', hint: 'CSV or XLSX', loading: 'Reading file…' },
   preview: { title: 'Data preview', counts: 'Detected {{rows}} rows and {{columns}} columns' },
+  normalize: {
+    title: 'Unify similar values',
+    intro: 'We found values that may refer to the same thing. Nothing changes until you confirm, and you can undo at any time. Your original file is never modified.',
+    kind: {
+      exact: 'Same after cleaning up spelling',
+      'known-alias': 'Known name in different spellings',
+      'possible-match': 'Possible match',
+    },
+    possibleWarning: 'These values may have different meanings. Review carefully before merging.',
+    into: 'Merge into:',
+    apply: 'Apply selected merges',
+    undo: 'Undo all',
+    applied: '{{count}} values changed (reversible)',
+  },
   profile: {
     type: { string: 'Text', number: 'Number', date: 'Date', boolean: 'Yes/No' },
     role: { dimension: 'Category', measure: 'Measure', identifier: 'Identifier', unknown: 'Unclassified' },
