@@ -17,6 +17,22 @@ export const en = {
     undo: 'Undo all',
     applied: '{{count}} values changed (reversible)',
   },
+  export: {
+    title: 'Export',
+    intro: 'Files are created on your device and never uploaded anywhere. They include only the merges you approved.',
+    bi: 'For business intelligence tools',
+    biIntro: 'A ready package with the cleaned data, a column dictionary and an import guide. Your dashboard does not transfer automatically; the dashboard description helps you recreate the charts.',
+    done: 'File created: {{file}}',
+    failed: 'The file could not be created.',
+    kind: {
+      csv: { title: 'Cleaned CSV', hint: 'UTF-8, opens correctly in Excel' },
+      xlsx: { title: 'Excel (XLSX)', hint: 'Column types and dates preserved' },
+      json: { title: 'JSON', hint: 'Data with a column dictionary' },
+      powerbi: { title: 'Power BI package', hint: 'CSV, Power Query script, dictionary, guide' },
+      metabase: { title: 'Metabase package', hint: 'CSV, dictionary, upload guide' },
+      spec: { title: 'Dashboard description', hint: 'DataCanvas file with charts and columns (no data)' },
+    },
+  },
   dash: {
     title: {
       page: 'Dashboard',

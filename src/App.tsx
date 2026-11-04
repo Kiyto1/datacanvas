@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Dashboard } from './components/Dashboard';
 import { DateConfirmation } from './components/DateConfirmation';
 import { DatasetPreview } from './components/DatasetPreview';
+import { ExportPanel } from './components/ExportPanel';
 import { NormalizationReview } from './components/NormalizationReview';
 import { UploadDropzone } from './components/UploadDropzone';
 import { useDashboard } from './store/dashboard';
@@ -53,6 +54,7 @@ export default function App() {
             onChoose={(id, cand) => void chooseDate(id, cand)}
           />
           <Dashboard key={summary.id} columns={summary.columns} dataVersion={applied} />
+          <ExportPanel datasetName={summary.name} columns={summary.columns} />
           <DatasetPreview summary={summary} rows={preview} />
         </>
       )}

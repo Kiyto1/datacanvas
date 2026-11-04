@@ -59,6 +59,11 @@ export class ColumnStore {
     this.dateCache.clear();
   }
 
+  /** Approved merges, for exports and the dictionary. Read-only view. */
+  get displayMap(): DisplayMap {
+    return this.decisions;
+  }
+
   setDecisions(map: DisplayMap): void {
     this.decisions = map;
     this.invalidate();

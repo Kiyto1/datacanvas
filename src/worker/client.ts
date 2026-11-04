@@ -1,5 +1,6 @@
 import type { DatasetSummary, RawCell } from '../core/types';
 import type { ChartResult, ChartSpec, Filter } from '../dashboard/types';
+import type { ExportRequest } from '../export/run';
 import type { ChangeLogEntry, NormalizationDecision } from '../normalize/types';
 import type { DateCandidate } from '../profile/dates';
 import type { WorkerRequest, WorkerResponse } from './protocol';
@@ -26,7 +27,7 @@ interface Pending {
 
 let worker: Worker | null = null;
 let nextRequestId = 0;
-const latest: Record<Kind, number> = { parse: 0, normalize: 0, aggregate: 0, setDateChoice: 0 };
+const latest: Record<Kind, number> = { parse: 0, normalize: 0, aggregate: 0, setDateChoice: 0, export: 0 };
 const pending = new Map<number, Pending>();
 
 function getWorker(): Worker {
@@ -78,6 +79,12 @@ export async function aggregateInWorker(specs: ChartSpec[], filters: Filter[]): 
 export async function setDateChoiceInWorker(columnId: string, candidate: DateCandidate): Promise<void> {
   const res = await send('setDateChoice', (requestId) => ({ type: 'setDateChoice', requestId, columnId, candidate }));
   if (res.type !== 'dateChoiceSet') throw new WorkerError('unknown', 'Unexpected response.');
+}
+
+export async function exportInWorker(request: ExportRequest): Promise<{ fileName: string; mime: string; bytes: Uint8Array }> {
+  const res = await send('export', (requestId) => ({ type: 'export', requestId, request }));
+  if (res.type !== 'exported') throw new WorkerError('unknown', 'Unexpected response.');
+  return { fileName: res.fileName, mime: res.mime, bytes: res.bytes };
 }
 
 export async function normalizeInWorker(

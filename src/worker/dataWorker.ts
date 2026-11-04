@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { LIMITS, ParseError } from '../core/types';
 import { dateCandidateSchema, filtersSchema, specsSchema, type ChartSpec } from '../dashboard/types';
+import { exportRequestSchema, runExport } from '../export/run';
 import { buildDisplayMap, decisionsSchema, displayCell, summarizeChanges } from '../normalize/layer';
 import { suggestNormalizations } from '../normalize/suggest';
 import { parseFile } from '../parse/parseFile';
@@ -95,6 +96,14 @@ function handleDateChoice(msg: Extract<WorkerRequest, { type: 'setDateChoice' }>
   post({ type: 'dateChoiceSet', requestId: msg.requestId });
 }
 
+function handleExport(msg: Extract<WorkerRequest, { type: 'export' }>): void {
+  if (!store) return invalid(msg.requestId, 'No dataset loaded.');
+  const request = exportRequestSchema.safeParse(msg.request);
+  if (!request.success) return invalid(msg.requestId, 'Invalid export request.');
+  const result = runExport(store, request.data);
+  post({ type: 'exported', requestId: msg.requestId, fileName: result.fileName, mime: result.mime, bytes: result.bytes });
+}
+
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const msg = event.data;
   try {
@@ -107,6 +116,8 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
         return handleAggregate(msg);
       case 'setDateChoice':
         return handleDateChoice(msg);
+      case 'export':
+        return handleExport(msg);
     }
   } catch (error) {
     if (error instanceof ParseError) {
