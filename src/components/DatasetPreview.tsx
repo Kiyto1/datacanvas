@@ -17,13 +17,21 @@ export function DatasetPreview({ summary }: { summary: DatasetSummary }) {
       <p className="mt-1 text-sm text-muted" data-testid="dataset-counts">
         {t('preview.counts', { rows: summary.rowCount, columns: summary.columnCount })}
       </p>
+      {summary.columns.some((c) => c.dateInference && c.dateInference.status !== 'confirmed') && (
+        <p role="note" className="mt-2 text-sm text-danger" data-testid="date-warning">
+          {t('profile.dateNeedsConfirmation')}
+        </p>
+      )}
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-start text-sm">
           <thead>
             <tr>
-              {summary.headers.map((h) => (
-                <th key={h} className="border-b border-line px-2 py-1 text-start font-semibold">
-                  {h}
+              {summary.columns.map((col) => (
+                <th key={col.id} className="border-b border-line px-2 py-1 text-start font-semibold" data-testid={`col-${col.id}`}>
+                  <div>{col.displayName}</div>
+                  <div className="text-xs font-normal text-muted">
+                    {t(`profile.type.${col.type}`)} · {t(`profile.role.${col.role}`)}
+                  </div>
                 </th>
               ))}
             </tr>

@@ -1,3 +1,5 @@
+import type { DateInference } from '../profile/dates';
+
 export type ColumnType = 'string' | 'number' | 'date' | 'boolean';
 export type ColumnRole = 'dimension' | 'measure' | 'identifier' | 'unknown';
 
@@ -8,6 +10,24 @@ export interface DataColumn {
   type: ColumnType;
   role: ColumnRole;
   nullable: boolean;
+}
+
+export type Aggregation = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'distinctCount';
+
+/** Why a role was chosen, so the review screen can explain and the user can override. */
+export type RoleSource = 'header' | 'data';
+
+export interface ColumnProfile extends DataColumn {
+  nonNullCount: number;
+  distinctCount: number;
+  nullRate: number;
+  allowedAggregations: Aggregation[];
+  defaultAggregation: Aggregation;
+  roleSource: RoleSource;
+  /** Present for date columns; `status !== 'confirmed'` means the user must choose a reading. */
+  dateInference?: DateInference;
+  /** Looks like a unit price/rate: averaging is meaningful, summing is not. */
+  unitPrice?: boolean;
 }
 
 /** Cell values straight from the file. `null` means missing; never '' or NaN. */
@@ -30,6 +50,7 @@ export interface DatasetSummary {
   columnCount: number;
   headers: string[];
   originalHeaders: string[];
+  columns: ColumnProfile[];
   preview: RawCell[][];
   encoding: string;
   sheetName?: string;

@@ -21,7 +21,22 @@ test('uploads an Arabic CSV, parses it in a worker and shows a preview', async (
   await expect(page.getByTestId('dataset-counts')).toContainText('3');
   await expect(page.getByRole('columnheader', { name: 'المبيعات' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'المدينة المنورة' })).toBeVisible();
+  // Profiling: date and measure are detected without renaming columns.
+  await expect(page.getByTestId('col-c0')).toContainText('تاريخ');
+  await expect(page.getByTestId('col-c3')).toContainText('رقم');
+  await expect(page.getByTestId('col-c3')).toContainText('قيمة قابلة للقياس');
+  await expect(page.getByTestId('date-warning')).toHaveCount(0);
   expect(external).toEqual([]);
+});
+
+test('warns when day/month order is ambiguous instead of guessing', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('file-input').setInputFiles({
+    name: 'dates.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('التاريخ,المبيعات\n03/04/2026,100\n05/06/2026,200\n', 'utf8'),
+  });
+  await expect(page.getByTestId('date-warning')).toBeVisible();
 });
 
 test('shows a friendly error for an unsupported file', async ({ page }) => {

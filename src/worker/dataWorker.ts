@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { LIMITS, ParseError, type RawTable } from '../core/types';
 import { parseFile } from '../parse/parseFile';
+import { inferColumns } from '../profile/inferColumns';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 // The full dataset lives here, never on the main thread.
@@ -28,6 +29,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
         columnCount: table.headers.length,
         headers: table.headers,
         originalHeaders: table.originalHeaders,
+        columns: inferColumns(table.headers, table.originalHeaders, table.rows),
         preview: table.rows.slice(0, LIMITS.previewRows),
         encoding: table.encoding,
         ...(table.sheetName !== undefined ? { sheetName: table.sheetName } : {}),
